@@ -1,0 +1,59 @@
+name: iOS build
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ios-build-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build with Xcode 26.6
+    runs-on: macos-26
+    timeout-minutes: 20
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v7
+
+      - name: Select Xcode 26.6
+        run: sudo xcode-select --switch /Applications/Xcode_26.6.app/Contents/Developer
+
+      - name: Show toolchain
+        run: xcodebuild -version
+
+      - name: Build iOS Simulator app
+        run: |
+          set -o pipefail
+          xcodebuild \
+            -project iOSApp/MediaRemoteApp.xcodeproj \
+            -scheme MediaRemoteApp \
+            -configuration Release \
+            -sdk iphonesimulator \
+            -destination 'generic/platform=iOS Simulator' \
+            -derivedDataPath "$RUNNER_TEMP/DerivedData" \
+            CODE_SIGNING_ALLOWED=NO \
+            clean build | tee "$RUNNER_TEMP/xcodebuild.log"
+
+      - name: Package simulator build
+        run: |
+          ditto -c -k --sequesterRsrc --keepParent \
+            "$RUNNER_TEMP/DerivedData/Build/Products/Release-iphonesimulator/MediaRemoteApp.app" \
+            "$RUNNER_TEMP/MediaRemoteApp-simulator.zip"
+
+      - name: Upload app and build log
+        uses: actions/upload-artifact@v7
+        with:
+          name: MediaRemoteApp-simulator-${{ github.run_number }}
+          path: |
+            ${{ runner.temp }}/MediaRemoteApp-simulator.zip
+            ${{ runner.temp }}/xcodebuild.log
+          if-no-files-found: error
+          retention-days: 14

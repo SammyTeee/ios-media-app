@@ -1,0 +1,51 @@
+name: Windows agent build
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: windows-agent-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build standalone Windows agent
+    runs-on: windows-2025
+    timeout-minutes: 15
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v7
+
+      - name: Set up .NET 8
+        uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Build
+        run: dotnet build WindowsAgent/MediaAgent/MediaAgent.csproj --configuration Release
+
+      - name: Publish standalone executable
+        run: >-
+          dotnet publish WindowsAgent/MediaAgent/MediaAgent.csproj
+          --configuration Release
+          --runtime win-x64
+          --self-contained true
+          --output "${{ runner.temp }}/MediaRemoteAgent"
+          -p:PublishSingleFile=true
+          -p:DebugType=None
+          -p:DebugSymbols=false
+
+      - name: Upload Windows agent
+        uses: actions/upload-artifact@v7
+        with:
+          name: MediaRemoteAgent-win-x64-${{ github.run_number }}
+          path: ${{ runner.temp }}/MediaRemoteAgent/MediaAgent.exe
+          if-no-files-found: error
+          retention-days: 14

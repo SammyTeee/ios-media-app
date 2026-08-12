@@ -1,0 +1,22 @@
+# Xcode
+DerivedData/
+build/
+*.xcuserstate
+xcuserdata/
+*.ipa
+*.dSYM.zip
+
+# .NET
+**/bin/
+**/obj/
+
+# Local tools and archives
+.tools/
+.dotnet-cli/
+*.7z
+
+# OS/editor files
+.DS_Store
+Thumbs.db
+.vs/
+.vscode/
