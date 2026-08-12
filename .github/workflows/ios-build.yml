@@ -57,3 +57,38 @@ jobs:
             ${{ runner.temp }}/xcodebuild.log
           if-no-files-found: error
           retention-days: 14
+
+      - name: Build unsigned iPhone app
+        run: |
+          set -o pipefail
+          xcodebuild \
+            -project iOSApp/MediaRemoteApp.xcodeproj \
+            -scheme MediaRemoteApp \
+            -configuration Release \
+            -sdk iphoneos \
+            -destination 'generic/platform=iOS' \
+            -derivedDataPath "$RUNNER_TEMP/DeviceDerivedData" \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            clean build | tee "$RUNNER_TEMP/xcodebuild-device.log"
+
+      - name: Package unsigned IPA for Sideloadly
+        run: |
+          APP_PATH="$RUNNER_TEMP/DeviceDerivedData/Build/Products/Release-iphoneos/MediaRemoteApp.app"
+          test -d "$APP_PATH"
+          lipo -info "$APP_PATH/MediaRemoteApp"
+          mkdir -p "$RUNNER_TEMP/Payload"
+          ditto "$APP_PATH" "$RUNNER_TEMP/Payload/MediaRemoteApp.app"
+          cd "$RUNNER_TEMP"
+          /usr/bin/zip -qry MediaRemoteApp-unsigned.ipa Payload
+          unzip -t MediaRemoteApp-unsigned.ipa
+
+      - name: Upload Sideloadly IPA
+        uses: actions/upload-artifact@v7
+        with:
+          name: MediaRemoteApp-sideloadly-${{ github.run_number }}
+          path: |
+            ${{ runner.temp }}/MediaRemoteApp-unsigned.ipa
+            ${{ runner.temp }}/xcodebuild-device.log
+          if-no-files-found: error
+          retention-days: 14

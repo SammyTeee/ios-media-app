@@ -6,9 +6,9 @@ Media Remote is a small iPhone remote for media playing on a Windows PC. The iOS
 
 The repository includes a complete Xcode project under `iOSApp/MediaRemoteApp.xcodeproj`. It targets iOS 17 or later and has no third-party package dependencies.
 
-Every push to `main`, pull request, or manual workflow run builds the app on GitHub Actions using macOS 26 and Xcode 26.6 (which includes the iOS 26.5 SDK). The workflow uploads an unsigned Simulator `.app` and its full build log as an artifact.
+Every push to `main`, pull request, or manual workflow run builds the app on GitHub Actions using macOS 26 and Xcode 26.6 (which includes the iOS 26.5 SDK). The workflow uploads both an unsigned Simulator `.app` and an unsigned physical-device `.ipa` suitable for re-signing with Sideloadly.
 
-An unsigned Simulator artifact proves the source compiles but cannot be installed on a physical iPhone. A physical-device or TestFlight build additionally requires an Apple Developer signing certificate, provisioning profile, and (for uploads) App Store Connect credentials.
+Download the `MediaRemoteApp-sideloadly-*` artifact, unzip it, and load `MediaRemoteApp-unsigned.ipa` into Sideloadly. Sideloadly applies the Apple ID signing needed for installation on a physical iPhone. A free Apple Developer account normally needs refreshing every seven days; a paid account lasts longer.
 
 The Windows workflow also publishes a self-contained `MediaAgent.exe`, so the companion can be downloaded and run without installing the .NET runtime.
 
